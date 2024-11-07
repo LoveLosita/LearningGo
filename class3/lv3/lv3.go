@@ -3,8 +3,12 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"time"
 )
+
+var mu sync.Mutex
+var Stock int
 
 type ClientID struct {
 	ConsumerID int
@@ -17,76 +21,62 @@ func randomInt(min, max int) int {
 
 func Timer(ToStock chan int) {
 	for {
-		time.Sleep(time.Duration(time.Duration(randomInt(5, 15)) * time.Second)) //Restock goods in a random frequency
+		time.Sleep(time.Duration(time.Duration(randomInt(5, 10)) * time.Second)) //Restock goods in a random frequency
 		ToStock <- 1
 	}
 }
 
-func ProcessPurchase(Buy chan ClientID, Stock chan int) {
-	SameStock := <-Stock //Get Stock from GenerateGoods
+func ProcessPurchase(Buy chan ClientID) {
 	for {
 		select { //Listening purchases
 		case Amount := <-Buy:
-			if Amount.Amount <= SameStock {
-				fmt.Printf("Consumer%d purchased %d goods!Current Stock:%d\n", Amount.ConsumerID, Amount.Amount, SameStock-Amount.Amount)
-				SameStock -= Amount.Amount
-				Stock <- SameStock //update Stock
+			mu.Lock()
+			if Amount.Amount <= Stock {
+				fmt.Printf("Consumer%d purchased %d goods!Current Stock:%d\n", Amount.ConsumerID, Amount.Amount, Stock-Amount.Amount)
+				Stock -= Amount.Amount
 			} else {
 				fmt.Printf("Sorry Consumer%d, the stock currently is %d, unable to meet your demend!\n",
-					Amount.ConsumerID, SameStock)
+					Amount.ConsumerID, Stock)
 			}
+			mu.Unlock()
 		default:
 			time.Sleep(time.Millisecond * 20)
-		}
-		select {
-		case SameStock = <-Stock: //Update stock here
-		default:
 		}
 	}
 }
 
-func GenerateGoods(Stock chan int, ToStock chan int, Exit chan int) {
+func GenerateGoods(ToStock chan int, Exit chan int) {
 	Counts := 0
-	SameStock := randomInt(5, 15) //Initial restock
-	Stock <- SameStock
-	fmt.Printf("The initial stock is %d\n", SameStock)
+	mu.Lock()
+	Stock = randomInt(5, 15) //initial Stock
+	mu.Unlock()
+	fmt.Printf("The initial stock is %d\n", Stock)
 	for Counts <= 20 {
 		select { //Listening for restock orders
 		case <-ToStock: //Waiting for restock signal
-			SameStock += randomInt(5, 15) //Each time restocking 5-15 goods
-			Stock <- SameStock
-			fmt.Printf("Current Stock: %d Goods!\n", SameStock)
+			mu.Lock()
+			Stock += randomInt(5, 15) //Each time restocking 5-15 goods
+			fmt.Printf("Current Stock: %d Goods!\n", Stock)
 			Counts += 1
+			mu.Unlock()
 		default:
 			time.Sleep(time.Millisecond * 20)
 		}
-		select {
-		case SameStock = <-Stock: //Update stock here
-		default:
-		}
 	}
-	close(Stock)
 	Exit <- -1 //Exit signal
 }
 
-func Consumer1(Buy chan ClientID, Stock chan int) {
+func Consumer1(Buy chan ClientID) {
 	for {
 		var Purchase ClientID
-		select {
-		case Goods := <-Stock:
-			time.Sleep(time.Duration(randomInt(10, 20)) * time.Second)
-			if Goods == -1 {
-				return
-			} else {
-				Purchase.ConsumerID = 1
-				Purchase.Amount = randomInt(5, 10)
-				Buy <- Purchase
-			}
-		}
+		time.Sleep(time.Duration(randomInt(10, 20)) * time.Second)
+		Purchase.ConsumerID = 1
+		Purchase.Amount = randomInt(5, 10)
+		Buy <- Purchase
 	}
 }
 
-func MeConsumer(Buy chan ClientID, Stock chan int) {
+func MeConsumer(Buy chan ClientID) {
 	for {
 		var Purchase ClientID
 		Purchase.ConsumerID = 2
@@ -97,13 +87,12 @@ func MeConsumer(Buy chan ClientID, Stock chan int) {
 
 func main() {
 	Buy := make(chan ClientID, 100)
-	Stock := make(chan int)
 	ToStock := make(chan int)
 	Exit := make(chan int)
-	go GenerateGoods(Stock, ToStock, Exit)
-	go ProcessPurchase(Buy, Stock)
-	go Consumer1(Buy, Stock)
-	go MeConsumer(Buy, Stock)
+	go GenerateGoods(ToStock, Exit)
+	go ProcessPurchase(Buy)
+	go Consumer1(Buy)
+	go MeConsumer(Buy)
 	go Timer(ToStock)
 	<-Exit
 }
