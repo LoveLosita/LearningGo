@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-var mu sync.Mutex
-var Stock int
+var mu sync.Mutex //As a lock
+var Stock int     //Update Stock immediately
 
 type ClientID struct {
 	ConsumerID int
@@ -16,6 +16,14 @@ type ClientID struct {
 }
 
 func randomInt(min, max int) int {
+	if min > max { //Check the equality of arguments
+		fmt.Println("Invalid range: min should not be greater than max")
+		return -1
+	}
+	if min == max {
+		fmt.Println("Range is too small: min and max are equal")
+		return min
+	}
 	return rand.Intn(max-min+1) + min
 }
 
@@ -45,7 +53,7 @@ func ProcessPurchase(Buy chan ClientID) {
 	}
 }
 
-func GenerateGoods(ToStock chan int, Exit chan int) {
+func GenerateGoods(ToStock chan int, Exit chan int, ToBuy chan int) {
 	Counts := 0
 	mu.Lock()
 	Stock = randomInt(5, 15) //initial Stock
@@ -58,6 +66,7 @@ func GenerateGoods(ToStock chan int, Exit chan int) {
 			Stock += randomInt(5, 15) //Each time restocking 5-15 goods
 			fmt.Printf("Current Stock: %d Goods!\n", Stock)
 			Counts += 1
+			ToBuy <- Stock //Call the robot(Consumer1)to buy, and tell the amount
 			mu.Unlock()
 		default:
 			time.Sleep(time.Millisecond * 20)
@@ -66,12 +75,13 @@ func GenerateGoods(ToStock chan int, Exit chan int) {
 	Exit <- -1 //Exit signal
 }
 
-func Consumer1(Buy chan ClientID) {
+func Consumer1(Buy chan ClientID, ToBuy chan int) {
 	for {
+		Amount := <-ToBuy
 		var Purchase ClientID
-		time.Sleep(time.Duration(randomInt(10, 20)) * time.Second)
+		time.Sleep(time.Duration(randomInt(1000, 3000)) * time.Microsecond) //Buy speed
 		Purchase.ConsumerID = 1
-		Purchase.Amount = randomInt(5, 10)
+		Purchase.Amount = randomInt(1, Amount)
 		Buy <- Purchase
 	}
 }
@@ -89,9 +99,10 @@ func main() {
 	Buy := make(chan ClientID, 100)
 	ToStock := make(chan int)
 	Exit := make(chan int)
-	go GenerateGoods(ToStock, Exit)
+	ToBuy := make(chan int)
+	go GenerateGoods(ToStock, Exit, ToBuy)
 	go ProcessPurchase(Buy)
-	go Consumer1(Buy)
+	go Consumer1(Buy, ToBuy)
 	go MeConsumer(Buy)
 	go Timer(ToStock)
 	<-Exit
