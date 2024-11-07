@@ -11,9 +11,13 @@ type ClientID struct {
 	Amount     int
 }
 
+func randomInt(min, max int) int {
+	return rand.Intn(max-min+1) + min
+}
+
 func Timer(ToStock chan int) {
 	for {
-		time.Sleep(time.Duration(rand.Intn(20)) * time.Second) //Restock goods in a random frequency
+		time.Sleep(time.Duration(time.Duration(randomInt(5, 15)) * time.Second)) //Restock goods in a random frequency
 		ToStock <- 1
 	}
 }
@@ -21,26 +25,32 @@ func Timer(ToStock chan int) {
 func GenerateGoods(Buy chan ClientID, Stock chan int, ToStock chan int, Exit chan int) {
 	Counts := 0
 	var Amount ClientID
-	time.Sleep(time.Duration(rand.Intn(20)))
-	SameStock := rand.Intn(10) //Initial restock
+	SameStock := randomInt(5, 15) //Initial restock
 	Stock <- SameStock
+	fmt.Printf("The initial stock is %d\n", SameStock)
 	for Counts <= 20 {
 		select { //Listening for restock orders
 		case <-ToStock:
-			SameStock += rand.Intn(10) //each time restocking 0-10 goods
+			SameStock += randomInt(5, 15) //each time restocking 0-10 goods
 			Stock <- SameStock
 			fmt.Printf("Restocked %d Goods!\n", SameStock)
 			Counts += 1
 		//Listening for purchases
+		default:
+			time.Sleep(time.Millisecond * 20)
+		}
+		select {
 		case Amount = <-Buy:
 			if Amount.Amount <= SameStock {
 				fmt.Printf("Consumer%d purchased %d goods!\n", Amount.ConsumerID, Amount.Amount)
 				SameStock -= Amount.Amount
 				Stock <- SameStock //update Stock
 			} else {
-				fmt.Printf("Sorry Consumer%d, the stock currently is %d, unable to meet your demend!\n", Amount.ConsumerID, SameStock)
+				fmt.Printf("Sorry Consumer%d, the stock currently is %d, unable to meet your demend!\n",
+					Amount.ConsumerID, SameStock)
 			}
 		default:
+			time.Sleep(time.Millisecond * 20)
 		}
 	}
 	close(Stock)
@@ -55,12 +65,12 @@ func Consumer1(Buy chan ClientID, Stock chan int) {
 			if !ok {
 				return
 			}
-			time.Sleep(time.Duration(rand.Intn(20)) * time.Second)
+			time.Sleep(time.Duration(randomInt(10, 20)) * time.Second)
 			if Goods == -1 {
 				return
 			} else {
 				Purchase.ConsumerID = 1
-				Purchase.Amount = rand.Intn(Goods)
+				Purchase.Amount = randomInt(5, 10)
 				Buy <- Purchase
 			}
 		}
