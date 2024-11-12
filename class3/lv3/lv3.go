@@ -79,7 +79,7 @@ func Consumer1(Buy chan ClientID, ToBuy chan int) {
 	for {
 		Amount := <-ToBuy
 		var Purchase ClientID
-		time.Sleep(time.Duration(randomInt(1000, 3000)) * time.Microsecond) //Buy speed
+		time.Sleep(time.Duration(randomInt(1, 2)) * time.Second) //Buy speed
 		Purchase.ConsumerID = 1
 		Purchase.Amount = randomInt(1, Amount)
 		Buy <- Purchase
