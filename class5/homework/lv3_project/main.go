@@ -10,6 +10,6 @@ func main() {
 	h.GET("/show", ShowCustomerInfo)             //已经验收没啥问题
 	h.GET("/changeCustomer", ChangeCustomerInfo) //已经验收没啥问题
 	h.GET("/addCustomer", AddCustomer)           //已经验收没啥问题
-	h.GET("/deleteCustomer", DeleteCustomer)
+	h.GET("/deleteCustomer", DeleteCustomer)     //已经验收没啥问题
 	h.Spin()
 }

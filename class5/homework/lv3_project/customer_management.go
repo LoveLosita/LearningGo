@@ -28,9 +28,11 @@ func ChangeCustomerInfo(ctx context.Context, c *app.RequestContext) {
 	newID := c.Query("newid")
 	newName := c.Query("newname")
 	newBalance := c.Query("balance")
+	found := false
 	//遍历查找并修改复制过来的结构体列表中的内容
 	for index, value := range customersList {
 		if (targetID != "" && value.Id == targetID) || (targetName != "" && value.Name == targetName) {
+			found = true
 			if newID != "" {
 				customersList[index].Id = newID
 			}
@@ -43,6 +45,13 @@ func ChangeCustomerInfo(ctx context.Context, c *app.RequestContext) {
 			c.JSON(consts.StatusOK, customersList[index]) //返回修改后的顾客信息
 			break
 		}
+	}
+	if !found {
+		c.JSON(consts.StatusBadRequest, map[string]string{
+			"error": "没找到需要修改的用户！",
+		})
+		fmt.Println("没找到需要修改的用户！")
+		return
 	}
 	err = SaveCustomers(customersList) //保存文件
 	if err != nil {                    //JSON文件保存时如果发生了错误
@@ -69,11 +78,20 @@ func ShowCustomerInfo(ctx context.Context, c *app.RequestContext) {
 	if choice == "all" {
 		c.JSON(consts.StatusOK, customersList) //展示全部顾客信息
 	} else {
+		found := false
 		for index, value := range customersList {
 			if (targetID != "" && value.Id == targetID) || (targetName != "" && value.Name == targetName) {
 				c.JSON(consts.StatusOK, customersList[index]) //展示顾客信息
+				found = true
 				break
 			}
+		}
+		if !found {
+			c.JSON(consts.StatusBadRequest, map[string]string{
+				"error": "没找到需要展示的用户！",
+			})
+			fmt.Println("没找到需要展示的用户！")
+			return
 		}
 	}
 
@@ -119,6 +137,7 @@ func DeleteCustomer(ctx context.Context, c *app.RequestContext) {
 	}
 	targetID := c.Query("id")
 	targetName := c.Query("name")
+	found := false
 	//遍历查找并修改复制过来的结构体列表中的内容
 	for index, value := range customersList {
 		if (targetID != "" && value.Id == targetID) || (targetName != "" && value.Name == targetName) {
@@ -126,8 +145,16 @@ func DeleteCustomer(ctx context.Context, c *app.RequestContext) {
 			slice = append(slice[:index], slice[index+1:]...)
 			customersList = slice
 			c.JSON(consts.StatusOK, customersList) //返回修改后的全部顾客信息
+			found = true
 			break
 		}
+	}
+	if !found {
+		c.JSON(consts.StatusBadRequest, map[string]string{
+			"error": "没找到需要删除的用户！",
+		})
+		fmt.Println("没找到需要删除的用户！")
+		return
 	}
 	err = SaveCustomers(customersList) //保存文件
 	if err != nil {                    //JSON文件保存时如果发生了错误
