@@ -2,10 +2,7 @@ module shopping
 
 go 1.23.2
 
-require (
-	github.com/cloudwego/hertz v0.9.3
-	golang.org/x/sys v0.27.0
-)
+require github.com/cloudwego/hertz v0.9.3
 
 require (
 	github.com/bytedance/go-tagexpr/v2 v2.9.2 // indirect
@@ -26,5 +23,6 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
+	golang.org/x/sys v0.27.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )

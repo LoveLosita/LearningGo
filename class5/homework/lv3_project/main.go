@@ -15,6 +15,6 @@ func main() {
 	h.GET("/addGood", AddGood)                   //添加商品
 	h.GET("/deleteGood", DeleteGood)             //删除商品
 	h.GET("/showGood", ShowGoodInfo)             //展示商品信息
-	h.GET("/buy", ProcessBuy)
+	h.GET("/buy", ProcessBuy)                    //处理购买
 	h.Spin()
 }
