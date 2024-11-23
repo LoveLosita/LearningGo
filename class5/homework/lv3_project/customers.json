@@ -2,11 +2,11 @@
   {
     "name": "小白",
     "id": "001",
-    "balance": 12.5
+    "balance": 112
   },
   {
     "name": "小黄人",
     "id": "002",
-    "balance": 114.51
+    "balance": 0
   }
 ]

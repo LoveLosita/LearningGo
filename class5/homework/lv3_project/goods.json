@@ -2,6 +2,11 @@
   {
     "itemID": "002",
     "name": "雪豹",
-    "amount": 99
+    "amount": 0
+  },
+  {
+    "itemID": "001",
+    "name": "雪豹2号",
+    "amount": 200
   }
 ]

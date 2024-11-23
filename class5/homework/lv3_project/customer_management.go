@@ -15,8 +15,8 @@ type SingleCustomer struct {
 }
 
 func ChangeCustomerInfo(ctx context.Context, c *app.RequestContext) {
-	customersList, err := ReadCostumers() //读取JSON文件中的顾客信息
-	if err != nil {                       //JSON文件读取时如果发生了错误
+	customersList, err := ReadCustomer() //读取JSON文件中的顾客信息
+	if err != nil {                      //JSON文件读取时如果发生了错误
 		c.JSON(consts.StatusBadRequest, map[string]string{
 			"error": err.Error(),
 		})
@@ -64,7 +64,7 @@ func ChangeCustomerInfo(ctx context.Context, c *app.RequestContext) {
 }
 
 func ShowCustomerInfo(ctx context.Context, c *app.RequestContext) {
-	customersList, err := ReadCostumers() //读取JSON文件中的顾客信息
+	customersList, err := ReadCustomer() //读取JSON文件中的顾客信息
 	choice := c.Query("type")
 	if err != nil { //JSON文件读取时如果发生了错误
 		c.JSON(consts.StatusBadRequest, map[string]string{
@@ -98,8 +98,8 @@ func ShowCustomerInfo(ctx context.Context, c *app.RequestContext) {
 }
 
 func AddCustomer(ctx context.Context, c *app.RequestContext) {
-	customersList, err := ReadCostumers() //读取JSON文件中的顾客信息
-	if err != nil {                       //JSON文件读取时如果发生了错误
+	customersList, err := ReadCustomer() //读取JSON文件中的顾客信息
+	if err != nil {                      //JSON文件读取时如果发生了错误
 		c.JSON(consts.StatusBadRequest, map[string]string{
 			"error": err.Error(),
 		})
@@ -127,8 +127,8 @@ func AddCustomer(ctx context.Context, c *app.RequestContext) {
 }
 
 func DeleteCustomer(ctx context.Context, c *app.RequestContext) {
-	customersList, err := ReadCostumers() //读取JSON文件中的顾客信息
-	if err != nil {                       //JSON文件读取时如果发生了错误
+	customersList, err := ReadCustomer() //读取JSON文件中的顾客信息
+	if err != nil {                      //JSON文件读取时如果发生了错误
 		c.JSON(consts.StatusBadRequest, map[string]string{
 			"error": err.Error(),
 		})

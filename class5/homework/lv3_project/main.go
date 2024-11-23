@@ -7,13 +7,14 @@ import (
 func main() {
 	h := server.Default()
 	//h.GET("/change", ChangeGood)
-	h.GET("/showCustomer", ShowCustomerInfo)     //已经验收没啥问题
-	h.GET("/changeCustomer", ChangeCustomerInfo) //已经验收没啥问题
-	h.GET("/addCustomer", AddCustomer)           //已经验收没啥问题
-	h.GET("/deleteCustomer", DeleteCustomer)     //已经验收没啥问题
-	h.GET("/changeGood", ChangeGood)
-	h.GET("/addGood", AddGood)
-	h.GET("/deleteGood", DeleteGood)
-	h.GET("/showGood", ShowGoodInfo)
+	h.GET("/showCustomer", ShowCustomerInfo)     //展示顾客信息
+	h.GET("/changeCustomer", ChangeCustomerInfo) //改变顾客信息
+	h.GET("/addCustomer", AddCustomer)           //添加顾客
+	h.GET("/deleteCustomer", DeleteCustomer)     //删除顾客
+	h.GET("/changeGood", ChangeGood)             //改变商品信息
+	h.GET("/addGood", AddGood)                   //添加商品
+	h.GET("/deleteGood", DeleteGood)             //删除商品
+	h.GET("/showGood", ShowGoodInfo)             //展示商品信息
+	h.GET("/buy", ProcessBuy)
 	h.Spin()
 }
