@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func ReadCostumers() ([]SingleCustomer, error) { //返回一个包含全部顾客的结构体列表
+func ReadCustomer() ([]SingleCustomer, error) { //返回一个包含全部顾客的结构体列表
 	filename := "customers.json"
 	file, err := os.Open(filename)
 	if err != nil {
@@ -21,8 +21,8 @@ func ReadCostumers() ([]SingleCustomer, error) { //返回一个包含全部顾�
 		return nil, fmt.Errorf("failed to get file info: %w", err)
 	}
 	if stat.Size() == 0 {
-		fmt.Println(err)
-		return nil, fmt.Errorf("file %s is empty", filename)
+		var emptyCustomer []SingleCustomer
+		return emptyCustomer, nil
 	}
 	var Customers []SingleCustomer
 	decoder := json.NewDecoder(file)
