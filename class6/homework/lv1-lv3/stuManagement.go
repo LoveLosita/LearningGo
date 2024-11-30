@@ -55,12 +55,27 @@ func DeleteStudents(ctx context.Context, c *app.RequestContext) {
 
 func AddStudents(ctx context.Context, c *app.RequestContext) {
 	id := c.Query("id")
+	rows, err := Db.Query("SELECT id ,name, age, gender, class FROM students WHERE id = ?", id)
+	if err != nil {
+		c.JSON(consts.StatusBadRequest, map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+	if rows.Next() {
+		c.JSON(consts.StatusBadRequest, map[string]string{
+			"error": "该id已存在，请换一个",
+		})
+		return
+	}
 	name := c.Query("name")
 	age := c.Query("age")
 	gender := c.Query("gender")
 	class := c.Query("class")
+	username := c.Query("username")
+	password := c.Query("password")
 	query := ""
-	if name == "" || age == "" || gender == "" || class == "" {
+	if name == "" || age == "" || gender == "" || class == "" || password == "" || username == "" {
 		c.JSON(consts.StatusBadRequest, map[string]string{
 			"error": "参数不全",
 		})
@@ -74,9 +89,9 @@ func AddStudents(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 	if id != "" {
-		query = "INSERT INTO students (id,name, age, gender, class) VALUES (?, ?, ?, ?)"
+		query = "INSERT INTO students (id,name, age, gender, class,username,password) VALUES (?, ?, ?, ?,?,?)"
 		// 执行插入操作
-		_, err := Db.Exec(query, id, name, int(intAge), gender, class)
+		_, err := Db.Exec(query, id, name, int(intAge), gender, class, username, password)
 		if err != nil {
 			c.JSON(consts.StatusBadRequest, map[string]string{
 				"error": err.Error(),
@@ -84,8 +99,8 @@ func AddStudents(ctx context.Context, c *app.RequestContext) {
 			return
 		}
 	} else {
-		query = "INSERT INTO students (name, age, gender, class) VALUES (?, ?, ?, ?)"
-		_, err := Db.Exec(query, name, int(intAge), gender, class)
+		query = "INSERT INTO students (name, age, gender, class,username,password) VALUES (?, ?, ?, ?,?,?)"
+		_, err := Db.Exec(query, name, int(intAge), gender, class, username, password)
 		if err != nil {
 			c.JSON(consts.StatusBadRequest, map[string]string{
 				"error": err.Error(),
@@ -184,10 +199,20 @@ func FindStudent(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 	student := Student{}
-	err = rows.Scan(&student.Id, &student.Name, &student.Age, &student.Gender, &student.Class)
-	if err != nil {
-		c.JSON(consts.StatusBadRequest, map[string]string{
-			"error": err.Error(),
+	// 使用 rows.Next() 遍历查询结果
+	if rows.Next() {
+		// 只有在 rows.Next() 返回 true 时才调用 rows.Scan
+		err := rows.Scan(&student.Id, &student.Name, &student.Age, &student.Gender, &student.Class)
+		if err != nil {
+			c.JSON(consts.StatusBadRequest, map[string]string{
+				"error": err.Error(),
+			})
+			return
+		}
+	} else {
+		// 如果没有找到数据，返回相应的错误信息
+		c.JSON(consts.StatusNotFound, map[string]string{
+			"error": "没有找到指定的学生",
 		})
 		return
 	}

@@ -15,7 +15,8 @@ func main() {
 	defer DisconnectDB()
 	h.GET("/search", FindStudent)
 	h.GET("/change", ChangeStudentInfo)
-	h.GET("/add", AddStudents)
+	h.GET("/register", AddStudents)
 	h.GET("/delete", DeleteStudents)
+	h.GET("login", Login)
 	h.Spin()
 }
