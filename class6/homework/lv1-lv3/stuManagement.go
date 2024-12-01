@@ -8,11 +8,13 @@ import (
 )
 
 type Student struct {
-	Id     int    `json:"id"`
-	Name   string `json:"name"`
-	Age    int    `json:"age"`
-	Gender string `json:"gender"`
-	Class  string `json:"class"`
+	Id       int    `json:"id"`
+	Name     string `json:"name"`
+	Age      int    `json:"age"`
+	Gender   string `json:"gender"`
+	Class    string `json:"class"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 func DeleteStudents(ctx context.Context, c *app.RequestContext) {
@@ -54,8 +56,15 @@ func DeleteStudents(ctx context.Context, c *app.RequestContext) {
 }
 
 func AddStudents(ctx context.Context, c *app.RequestContext) {
-	id := c.Query("id")
-	rows, err := Db.Query("SELECT id ,name, age, gender, class FROM students WHERE id = ?", id)
+	studentInfo := Student{}
+	err := c.BindJSON(&studentInfo) //从Json请求中获取信息
+	if err != nil {
+		c.JSON(consts.StatusBadRequest, map[string]string{
+			"error": "未知的请求数据",
+		})
+		return
+	}
+	rows, err := Db.Query("SELECT id ,name, age, gender, class FROM students WHERE id = ?", studentInfo.Id)
 	if err != nil {
 		c.JSON(consts.StatusBadRequest, map[string]string{
 			"error": err.Error(),
@@ -68,30 +77,11 @@ func AddStudents(ctx context.Context, c *app.RequestContext) {
 		})
 		return
 	}
-	name := c.Query("name")
-	age := c.Query("age")
-	gender := c.Query("gender")
-	class := c.Query("class")
-	username := c.Query("username")
-	password := c.Query("password")
 	query := ""
-	if name == "" || age == "" || gender == "" || class == "" || password == "" || username == "" {
-		c.JSON(consts.StatusBadRequest, map[string]string{
-			"error": "参数不全",
-		})
-		return
-	}
-	intAge, err := strconv.ParseInt(age, 10, 0)
-	if err != nil {
-		c.JSON(consts.StatusBadRequest, map[string]string{
-			"error": err.Error(),
-		})
-		return
-	}
-	if id != "" {
-		query = "INSERT INTO students (id,name, age, gender, class,username,password) VALUES (?, ?, ?, ?,?,?)"
+	if studentInfo.Id != 0 {
+		query = "INSERT INTO students (id,name, age, gender, class,username,password) VALUES (?,?, ?, ?, ?,?,?)"
 		// 执行插入操作
-		_, err := Db.Exec(query, id, name, int(intAge), gender, class, username, password)
+		_, err := Db.Exec(query, studentInfo.Id, studentInfo.Name, studentInfo.Age, studentInfo.Gender, studentInfo.Class, studentInfo.Username, studentInfo.Password)
 		if err != nil {
 			c.JSON(consts.StatusBadRequest, map[string]string{
 				"error": err.Error(),
@@ -100,7 +90,7 @@ func AddStudents(ctx context.Context, c *app.RequestContext) {
 		}
 	} else {
 		query = "INSERT INTO students (name, age, gender, class,username,password) VALUES (?, ?, ?, ?,?,?)"
-		_, err := Db.Exec(query, name, int(intAge), gender, class, username, password)
+		_, err := Db.Exec(query, studentInfo.Name, studentInfo.Age, studentInfo.Gender, studentInfo.Class, studentInfo.Username, studentInfo.Password)
 		if err != nil {
 			c.JSON(consts.StatusBadRequest, map[string]string{
 				"error": err.Error(),
@@ -114,19 +104,36 @@ func AddStudents(ctx context.Context, c *app.RequestContext) {
 }
 
 func ChangeStudentInfo(ctx context.Context, c *app.RequestContext) {
+	newStudentInfo := Student{}
+	err := c.BindJSON(&newStudentInfo)
 	targetID := c.Query("id")
 	intTargetID, err := strconv.ParseInt(targetID, 10, 0)
 	student := Student{}
-	rows, err := Db.Query("SELECT id ,name, age, gender, class FROM students WHERE id = ?", int(intTargetID))
+	rows, err := Db.Query("SELECT id ,name, age, gender, class,username,password FROM students WHERE id = ?", int(intTargetID))
 	if err != nil {
 		c.JSON(consts.StatusBadRequest, map[string]string{
 			"error": err.Error(),
 		})
 		return
 	}
+	if newStudentInfo.Username != "" {
+		ifSameUsername, err := Db.Query("SELECT id ,name, age, gender, class,username,password FROM students WHERE username = ?", newStudentInfo.Username)
+		if err != nil {
+			c.JSON(consts.StatusBadRequest, map[string]string{
+				"error": err.Error(),
+			})
+			return
+		}
+		if ifSameUsername.Next() {
+			c.JSON(consts.StatusBadRequest, map[string]string{
+				"error": "用户名已存在！",
+			})
+			return
+		}
+	}
 	// 这里加入 rows.Next()
 	if rows.Next() { // 确保至少有一行返回
-		err := rows.Scan(&student.Id, &student.Name, &student.Age, &student.Gender, &student.Class)
+		err := rows.Scan(&student.Id, &student.Name, &student.Age, &student.Gender, &student.Class, &student.Username, &student.Password)
 		if err != nil {
 			c.JSON(consts.StatusBadRequest, map[string]string{
 				"error": err.Error(),
@@ -140,34 +147,33 @@ func ChangeStudentInfo(ctx context.Context, c *app.RequestContext) {
 		})
 		return
 	}
-	name := c.Query("name")
-	id := c.Query("newid")
-	intID, err := strconv.ParseInt(id, 10, 0)
-	gender := c.Query("gender")
-	class := c.Query("class")
-	age := c.Query("age")
-	intAge, err := strconv.ParseInt(age, 10, 0)
-	if name != "" {
-		student.Name = name
+	if newStudentInfo.Name != "" {
+		student.Name = newStudentInfo.Name
 	}
-	if id != "" {
-		student.Id = int(intID)
+	if newStudentInfo.Id != 0 {
+		student.Id = newStudentInfo.Id
 	}
-	if gender != "" && (gender == "男" || gender == "女") {
-		student.Gender = gender
-	} else if gender != "" && !(gender == "男" || gender == "女") {
+	if newStudentInfo.Username != "" {
+		student.Username = newStudentInfo.Username
+	}
+	if newStudentInfo.Password != "" {
+		student.Password = newStudentInfo.Password
+	}
+	if newStudentInfo.Gender != "" && (newStudentInfo.Gender == "男" || newStudentInfo.Gender == "女") {
+		student.Gender = newStudentInfo.Gender
+	} else if newStudentInfo.Gender != "" && !(newStudentInfo.Gender == "男" || newStudentInfo.Gender == "女") {
 		c.JSON(consts.StatusBadRequest, map[string]string{
 			"error": "性别错误！",
 		})
 	}
-	if class != "" {
-		student.Class = class
+	if newStudentInfo.Class != "" {
+		student.Class = newStudentInfo.Class
 	}
-	if age != "" {
-		student.Age = int(intAge)
+	if newStudentInfo.Age != 0 {
+		student.Age = newStudentInfo.Age
 	}
-	query := "UPDATE students SET id=?,name=?, age=?,gender=?,class=? WHERE id=?"
-	result, err := Db.Exec(query, student.Id, student.Name, student.Age, student.Gender, student.Class, intTargetID)
+	query := "UPDATE students SET id=?,name=?, age=?,gender=?,class=?,username=?,password=? WHERE id=?"
+	result, err := Db.Exec(query, student.Id, student.Name, student.Age, student.Gender, student.Class, student.Username, student.Password, intTargetID)
 	if err != nil {
 		// 如果发生错误，返回错误信息
 		c.JSON(consts.StatusBadRequest, map[string]string{
@@ -191,7 +197,7 @@ func ChangeStudentInfo(ctx context.Context, c *app.RequestContext) {
 
 func FindStudent(ctx context.Context, c *app.RequestContext) {
 	id := c.Query("id")
-	rows, err := Db.Query("SELECT id ,name, age, gender, class FROM students WHERE id = ?", id)
+	rows, err := Db.Query("SELECT id ,name, age, gender, class,username,password FROM students WHERE id = ?", id)
 	if err != nil {
 		c.JSON(consts.StatusBadRequest, map[string]string{
 			"error": err.Error(),
@@ -202,7 +208,7 @@ func FindStudent(ctx context.Context, c *app.RequestContext) {
 	// 使用 rows.Next() 遍历查询结果
 	if rows.Next() {
 		// 只有在 rows.Next() 返回 true 时才调用 rows.Scan
-		err := rows.Scan(&student.Id, &student.Name, &student.Age, &student.Gender, &student.Class)
+		err := rows.Scan(&student.Id, &student.Name, &student.Age, &student.Gender, &student.Class, &student.Username, &student.Password)
 		if err != nil {
 			c.JSON(consts.StatusBadRequest, map[string]string{
 				"error": err.Error(),

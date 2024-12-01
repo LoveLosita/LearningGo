@@ -42,3 +42,7 @@ func Login(ctx context.Context, c *app.RequestContext) {
 		}
 	}
 }
+
+func ChangePassword(ctx context.Context, c *app.RequestContext) {
+
+}
