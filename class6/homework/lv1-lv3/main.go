@@ -17,6 +17,7 @@ func main() {
 	h.POST("/change", ChangeStudentInfo)
 	h.POST("/register", AddStudents)
 	h.GET("/delete", DeleteStudents)
-	h.GET("/login", Login)
+	h.POST("/login", Login)
+	h.POST("/changePwd", ChangePassword)
 	h.Spin()
 }
