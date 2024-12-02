@@ -6,18 +6,18 @@ import (
 )
 
 func main() {
-	h := server.Default()
-	err := ConnectDB()
+	h := server.Default() //启动服务
+	err := ConnectDB()    //链接数据库
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	defer DisconnectDB()
-	h.GET("/search", FindStudent)
-	h.POST("/change", ChangeStudentInfo)
-	h.POST("/register", AddStudents)
-	h.GET("/delete", DeleteStudents)
-	h.POST("/login", Login)
-	h.POST("/changePwd", ChangePassword)
-	h.Spin()
+	defer DisconnectDB()                 //在退出时关闭数据库连接
+	h.GET("/search", FindStudent)        //搜索模块
+	h.POST("/change", ChangeStudentInfo) //改变学生信息模块
+	h.POST("/register", AddStudents)     //新增学生模块
+	h.GET("/delete", DeleteStudents)     //删除学生模块
+	h.POST("/login", Login)              //学生用户名密码登录模块
+	h.POST("/changePwd", ChangePassword) //学生改密码模块
+	h.Spin()                             //使服务保持运行
 }
